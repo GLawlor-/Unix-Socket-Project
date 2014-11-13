@@ -33,10 +33,10 @@ Reads a message from a file on the server and responds contents to the client.  
 --MSGSTORE--Gareth
 Allows logged in users to add a message of the day to the MoD.txt file on the server.  Users will receive an error if they are not logged in.
 
---WHO--
+--WHO--Gareth+Josh
 List all active users, including the UserID and the users IP addresses.
 
---SEND--
+--SEND--Gareth
 Send a private message to an active user.  If the UserID is invalid or the receiver is not active, the server replies the client with an error message “420 either the user does not exist or is not logged in”; otherwise, the server forwards the message to the designated user.  In addition, the receiving client should process the message immediately.
 
 --LOGOUT--Josh
@@ -61,8 +61,10 @@ The port number is a hard coded constant with 5556 as the value (SID).
 --On client type ./client IP ADDRESS, i.e. ./client 127.0.0.1
 
 The program will run with the commands listed in the assignment, or you may use the corresponding numbers in the menu.  When the user types MENU or ? a list of commands and corresponding numbers will be displayed.
-
+Welcome to the server!
+Please send a ? or Menu to see your options
 CLIENT: ?
+
 SERVER:
 1) MSGGET: Get message
 2) MSGSTORE: Add message(Must be logged in)
@@ -70,6 +72,8 @@ SERVER:
 4) QUIT: Close client application
 5) SHUTDOWN: Shut down Server (Must be logged in)
 >) LOGIN USER PASS : Login to server with username and password
+>) WHO: Get a list of all logged-in users and IP addresses
+>) SEND USER: Sends a message to the specified user
 CLIENT:
 *see the sample outputs for line by line detail on how the program works.
 
@@ -146,23 +150,51 @@ s: 200 OK
   The list of the active users:
   john    141.215.10.30
   root    127.0.0.1
+~~~~example of WHO command after a user logs out
+--david's window
+Client: LOGIN david david01
+
+Server: 200 OK: Logged In
+
+Client: WHO
+
+Server: 200 OK
+The list of active users:
+root       127.0.0.1
+john       127.0.0.1
+david       127.0.0.1
+
+Client: LOGOUT
+
+Server: 200 OK: Logged out
+
+--root's window
+Client: WHO
+
+Server: 200 OK
+The list of active users:
+root       127.0.0.1
+john       127.0.0.1
+Anonymous  127.0.0.1
+
+
   
 ~~~~~output from a user running the SEND command
 --David's window
-c: SEND john
-s: 200 OK
-c: Hello John
-s: 200 OK
+Client: SEND john
+Server: 200 OK
+Client: Hello John
+Server: 200 OK
 --John's window
-s: 200 OK you have a message from david
+Server: 200 OK you have a message from david
 david: Hello John
 
 --------------
 Files Included
 --------------
-server.c	Listener program that performs functions as requested
-client.c	Client program that sends commands to server
-README.txt	This file
+multiThreadserver.c	Listener program that performs functions as requested
+sclient.c	Client program that sends and receives commands to server
+README.md	This file
 Makefile	Makefile to build server/client
 MoD.txt		Text file that contains the Messages of the Day
 PASS		Text file that contains the userids and passwords of all users
@@ -178,9 +210,9 @@ Responsibilities
 ----------------
 The project was split amounst us fairly as we had varying experience with C\C++.
 We both refined each other's work with editing and validating code, as well as debugging.
-SEND      --??
-WHO       --??
-MultiThread --??
+SEND      --Gareth
+WHO       --Gareth+Josh
+MultiThread --Gareth
 MSGGET		--Gareth
 MSGSTORE	--Gareth
 LOGOUT		--Josh
