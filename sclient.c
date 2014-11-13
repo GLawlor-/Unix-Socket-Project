@@ -108,8 +108,15 @@ int main(int argc, char * argv[]) {
 			// handle data from the server
 			if (recv(s, buf, sizeof(buf), 0) > 0)
 			{
-				cout << "\nServer: " << buf;
 				
+				/*if( (strstr(buf, "200 OK you have a new message from")) != NULL )
+				{
+					cout << "USER: " << buf << endl;
+				}
+				else
+				{*/
+				cout << "\nServer: " << buf;
+				//}
 				//Client reactions start here
 				if (strcmp(buf,"Quitting program...\n----All your base are belong to us!----\n") == 0)
 				{
@@ -140,7 +147,7 @@ int main(int argc, char * argv[]) {
 					
 					send (s, msgstorsnd, len1, 0);
 					recv (s, rbuf2, sizeof(rbuf2), 0);
-					cout << "SERVER: " << rbuf2 << endl;
+					cout << "Server: " << rbuf2 << endl;
 					
 				}
 				

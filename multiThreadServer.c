@@ -65,6 +65,7 @@ void *ChildThread(void *newfd) {
                 // connection closed
                 cout << "Server: socket " << childSocket <<" hung up" << endl;
 				connInfo[childSocket] = "disconnect";	//Remove from Array
+				connUser[childSocket] = "Anonymous";	//Remove login name
             } else {
                 perror("recv");
             }
@@ -146,6 +147,7 @@ void *ChildThread(void *newfd) {
 				char msgres[MAX_LINE] = "200 OK: Logged out\n";
 				
 				loggedin = 0;	//flip secure bit off
+				connUser[childSocket] = "Anonymous";
 				msglen = strlen (msgres)+1;
 				send (childSocket, msgres, msglen, 0); 
 			}
@@ -248,7 +250,7 @@ void *ChildThread(void *newfd) {
 				
 				//connInfo[childSocket][1] = tokens[1];
 				connUser[childSocket] = tokens[1];
-				cout << "Client " << childSocket << ": logged in as " << connUser[childSocket] << endl;//tokarray[1] << endl;
+				cout << "  Client " << childSocket << " logged in as " << connUser[childSocket] << endl;//tokarray[1] << endl;
 				
 				char msgres[MAX_LINE] = "200 OK: Logged In\n";
 				msglen = strlen (msgres)+1;
@@ -261,7 +263,7 @@ void *ChildThread(void *newfd) {
 				send (childSocket, msgres, msglen, 0);
 				}
 			}
-			//WHO -- Josh
+			//WHO -- Gareth/Josh
 			else if( (strcmp(buf, "WHO\n")) == 0 )
 			{
 				//convert from string to char array so we can send through socket
@@ -273,35 +275,22 @@ void *ChildThread(void *newfd) {
 				*/
 				string listUsers = "200 OK\nThe list of active users:\n";
 				
+				//start at socket 4 and move up to fdmax(the highest # socket)
 				int a;
 				for(a = 4; a <= fdmax; a++)
 				{
-					string connUser1 = connInfo[a];
-					if (connUser1.compare("disconnect") != 0)
+					//string connUser1 = connInfo[a];
+					//exclude disconnected users; include users that did not login yet
+					if (connInfo[a].compare("disconnect") != 0)
 					{
-						//cout << connInfo[a][1] << "    " << connInfo[a][0] << endl;
-						//cout << "ConnUser " << a << ": " << connUser[a] << endl;
-						//cout << connUser[a] << "       " << connInfo[a] << endl;
-						listUsers = listUsers + connUser[a]+ "       " + connInfo[a] + "\n";
+						listUsers = listUsers + connUser[a]+ "       " + connInfo[a] + "\n"; //add all users of system
 					}
-					//else
-					//{
-					//	cout << "Connuser " << a << ": Anonymous" << endl;
-					//}
 				}
-				//need to build as an array
-				
-				//printf( "%s\n", connInfo ); cout << endl;
 				
 				char msgres[MAX_LINE] = "";	//blank out msgres char array
-				//string listUsers = "200 OK\nThe list of active users:\n";
-				
-				size_t length = listUsers.copy(msgres,MAX_LINE,0);
+				size_t length = listUsers.copy(msgres,MAX_LINE,0);  //Copy string to char string msgres
 				msgres[length]='\n';	//add newline at end of Message of the Day
-				//cout << "length: " << length << endl;
-				//cout << "msgres: " << msgres << endl;
-				
-				//char msgres[MAX_LINE] = "200 OK\nThe list of active users:\njohn		127.0.0.1\n";
+				//char msgres[MAX_LINE] = "200 OK\nThe list of active users:\njohn		127.0.0.1\n";  //test debug
 				msglen = strlen (msgres)+1;
 				send (childSocket, msgres, msglen, 0);
 			}
@@ -310,42 +299,75 @@ void *ChildThread(void *newfd) {
 			else if( (strstr(buf, "SEND")) != NULL )
 			{
 				//cout << "buf: " << buf << endl;
-				
-				//need to increment and find user
-				//cout << "LOGGEDIN: " << logUser[0][4];
-				
+				if ( (strcmp(buf, "SEND\n")) == 0)
+				{
+					char msgres[MAX_LINE] = "420 either the user does not exist or is not logged in\n"; //Send error msg if we can't find user
+					msglen1 = strlen (msgres)+1;	//Calculate size of buffer
+					send (childSocket, msgres, msglen1, 0);	//send message to another user
+					
+				}
+				else
+				{
 				//find all open sockets
-				
-				//cout << "LOGGEDIN: " << connInfo[0][childSocket] << endl;
-				//cout << "ALL LoggedIN: " << logUser << endl;
 				
 				//need to string find user
 				
 				//need to return Login Socket
+				string bufstring = buf;
+				string tokbuf;  //Buffer for token extract
+				stringstream ss(bufstring);  //Insert string to stream
+				
+				vector<string> tokens;	//Vector to hold words;
+				while (ss >> tokbuf)
+					tokens.push_back(tokbuf);
+				
+				//connInfo[childSocket][1] = tokens[1];
+				//connUser[childSocket] = tokens[1];
+				
+
+
+				//on socket: " << endl;
+				//connUser[childSocket] << endl;//tokarray[1] << endl;
+				
+				
+				
+				//need to increment and find user
+				//if (connInfo[a].compare("disconnect") != 0)
+				int foundUser = 0;
+				int foundSocket = 0;
 				int a;
 				for(a = 4; a <= fdmax; a++)
 				{
-					//if ( (strstr(connInfo[a][0],"\n")) != NULL )
-					//{
-						
-						//cout << "UsersLoggedIn: " << connInfo[a][1] << endl;
-					//}
+					if (connUser[a].compare(tokens[1]) == 0)
+					{
+						foundUser = 1;
+						foundSocket = a;
+						//cout << "UsersLoggedIn: " << connUser[a] << endl;
+						//cout << "Tokens: " << tokens[1] <<endl;
+					}
 				}
 				
-				if ( 1==1 )
+				if ( foundUser ==1 )
 				{
+					cout << "Client " << childSocket << " sending message to " << tokens[1] << "\n";
 					char msgres[MAX_LINE] = "200 OK\n";
 					msglen = strlen (msgres)+1;
 					send (childSocket, msgres, msglen, 0); //Send OK message
 					recv(childSocket, buf, sizeof(buf), 0);	//receive msg to transmit
 					int buf1size = strlen(buf) + 1;	//size of second receive
-					cout << "Client(MessageRelay): " << buf << "   size: "<<buf1size<<endl;	//Display received message and size
+					//cout << "Client(MessageRelay): " << buf << "   size: "<<buf1size<<endl;	//Display received message and size
 					//cout << buf << endl;	//output buf contents
 					char msgres1[MAX_LINE] = "200 OK\n";	//send confirmation
 					msglen1 = strlen (msgres1)+1;	//Calculate size of buffer
 					send (childSocket, msgres1, msglen1, 0);	//send message to client
-					buf[sizeof(buf)-1] = '\n';
-					send (5, buf, sizeof(buf), 0);
+					string bufclient = "200 OK you have a new message from ";
+					bufclient = bufclient + connUser[childSocket] + "\n" + connUser[childSocket] + ": " + buf;
+					char msgres2[MAX_LINE] = "";	//blank out msgres char array
+					size_t length = bufclient.copy(msgres2,MAX_LINE,0);  //Copy string to char string msgres
+					msgres2[length]='\n';	//add newline at end of client message
+					
+					//buf[sizeof(buf)-1] = '\n';
+					send (foundSocket, msgres2, sizeof(msgres2), 0);
 				}
 				else 
 				{
@@ -353,7 +375,7 @@ void *ChildThread(void *newfd) {
 					msglen1 = strlen (msgres)+1;	//Calculate size of buffer
 					send (childSocket, msgres, msglen1, 0);	//send message to another user
 				}
-				
+				}
 				
 			}
 			
